@@ -141,19 +141,6 @@ def load_nsides(db: sqlite3.Connection):
 
     get_uses(cursor)
 
-    # tables = ['ingredient', 'adverse_effect', 'interaction', 'interaction_ingredients', 'condition', 'treatment']
-    # for table in tables:
-    #     print(f"Rows for table {table}:")
-    #     
-    #     # Execute SELECT statement to fetch all rows from the table
-    #     cursor.execute(f"SELECT * FROM {table}")
-    #     rows = cursor.fetchall()
-    #     
-    #     # Print the rows
-    #     for row in rows:
-    #         print(row)
-    #     
-    #     print("\n" + "="*40 + "\n")
 
     cursor.close()
     db.commit()
@@ -199,6 +186,22 @@ def get_uses(cursor: sqlite3.Cursor):
 
     pass
 
+def print_db(db: sqlite3.Connection):
+    cursor = db.cursor()
+    tables = ['ingredient', 'adverse_effect', 'interaction', 'interaction_ingredients', 'condition', 'treatment']
+    for table in tables:
+        print(f"Rows for table {table}:")
+        
+        # Execute SELECT statement to fetch all rows from the table
+        cursor.execute(f"SELECT * FROM {table}")
+        rows = cursor.fetchall()
+        
+        # Print the rows
+        for row in rows:
+            print(row)
+        
+        print("\n" + "="*40 + "\n")
+
 def main():
     db = sqlite3.connect('meds.db')
     from sys import argv
@@ -207,6 +210,8 @@ def main():
         return
     if argv[1] == 'nsides':
         load_nsides(db)
+    elif argv[1] == 'print_db':
+        print_db(db)
 
     db.close()
 
