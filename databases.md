@@ -1,3 +1,6 @@
-postgres,,https://drugcentral.org/download
+connection,notes,link
+->postgres,animal?,https://drugcentral.org/download
 api,,https://lhncbc.nlm.nih.gov/RxNav/applications/RxMixTutorial.html
-sqlneeds request,https://www.drugbank.com/datasets
+sql?,needs request,https://www.drugbank.com/datasets
+->sqlite,,https://nsides.io/
+->,adverse reactions,https://bionlp.nlm.nih.gov/tac2017adversereactions/

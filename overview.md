@@ -21,6 +21,8 @@ first score:
 - confirmed ($c$)
 - similarity ($c$)
 
-
-
 # Output
+
+# stack
+- back/front: py + django
+- db: postgress + pgvector
