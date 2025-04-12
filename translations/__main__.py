@@ -18,11 +18,32 @@ def add_effect(meddra_id, meddra_term, cursor: sqlite3.Cursor):
 
     return cursor.lastrowid
 
-def add_interaction(meddra_id, meddra_term, cursor: sqlite3.Cursor):
+def add_interaction(effect_id, notes, cursor: sqlite3.Cursor):
     cursor.execute("""
-    INSERT INTO adverse_effect (pt_meddra_id, pt_meddra_term)
+    INSERT INTO interaction (effect_id, notes)
     VALUES (?, ?)
-    """, (meddra_id, meddra_term))
+    """, (effect_id, notes))
+
+    return cursor.lastrowid
+
+def add_interaction_ingredient(interaction_id, ingredient_id, cursor: sqlite3.Cursor):
+    cursor.execute("""
+    INSERT INTO interaction_ingredients (interaction_id, ingredient_id)
+    VALUES (?, ?)
+    """, (interaction_id, ingredient_id))
+
+def add_condition(name, cursor: sqlite3.Cursor):
+    cursor.execute("""
+    INSERT INTO condition (name) VALUES (?)
+    """, (name,))
+
+    return cursor.lastrowid
+
+def add_treatment(ing_id, c_id, cursor: sqlite3.Cursor):
+    cursor.execute("""
+    INSERT INTO treatment (condition_id, ingredient_id)
+    VALUES (?, ?)
+    """, (ing_id, c_id))
 
     return cursor.lastrowid
 
@@ -66,19 +87,9 @@ def load_nsides(db: sqlite3.Connection):
     """)
 
     cursor.execute("""
-    CREATE TABLE condition (
-        interaction_id INTEGER NOT NULL,
-        ingredient_id INTEGER NOT NULL,
-        FOREIGN KEY (interaction_id) REFERENCES interaction(id),
-        FOREIGN KEY (ingredient_id) REFERENCES ingredient(id),
-        PRIMARY KEY (interaction_id, ingredient_id)
-    );
-    """)
-
-    cursor.execute("""
     CREATE TABLE IF NOT EXISTS condition (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        condition_name TEXT
+        name TEXT
     );
     """)
 
@@ -98,6 +109,8 @@ def load_nsides(db: sqlite3.Connection):
         ing_id = (row['ingredients_rxcuis'], row['ingredients_names'])
         # arr of ids of ingredients
         act_ing = []
+
+        # adds ingredients
         if  row['num_ingredients'] == 1:
             if ing_id not in ingredients_map:
                 ingredients_map[ing_id] = add_ingredient(row['ingredients_rxcuis'], row['ingredients_names'], cursor)
@@ -114,43 +127,76 @@ def load_nsides(db: sqlite3.Connection):
 
             pass
 
+        # add adverse effects
         eff_id = row['pt_meddra_id']
         if eff_id not in effects_map:
-                effects_map[eff_id] = add_effect(row['pt_meddra_id'], row['pt_meddra_term'], cursor)
+            effects_map[eff_id] = add_effect(row['pt_meddra_id'], row['pt_meddra_term'], cursor)
 
-        print(act_ing)
-        print(row['pt_meddra_term'])
+        # add interaction
+        interaction_id = add_interaction(effects_map[eff_id], '', cursor)
+        # add interaction, ingredient relation
+        for ingredient in act_ing:
+            add_interaction_ingredient(interaction_id, ingredient, cursor)
 
+
+    get_uses(cursor)
+
+    # tables = ['ingredient', 'adverse_effect', 'interaction', 'interaction_ingredients', 'condition', 'treatment']
+    # for table in tables:
+    #     print(f"Rows for table {table}:")
+    #     
+    #     # Execute SELECT statement to fetch all rows from the table
+    #     cursor.execute(f"SELECT * FROM {table}")
+    #     rows = cursor.fetchall()
+    #     
+    #     # Print the rows
+    #     for row in rows:
+    #         print(row)
+    #     
+    #     print("\n" + "="*40 + "\n")
+
+    cursor.close()
     db.commit()
     pass
 
-def get_uses(db: sqlite3.Connection):
-    cursor = db.cursor()
-    cursor.execute("SELECT ingredient_rxcui FROM ingredient")
+def get_uses(cursor: sqlite3.Cursor):
+    cursor.execute("SELECT id, ingredient_rxcui FROM ingredient")
     rows = cursor.fetchall()
-    for row in rows:
-        url = f"https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json?rxcui={row[0]}&rela=may_treat"
-        response = requests.get(url)
+
+    conditions = {}
+    treatments = set()
+    tt = len(rows)
+    for i, row in enumerate(rows):
+        print(f'{100 * i / tt:0.3}%')
+        ing_id = row[0]
+        rxcui = row[1]
+        url = f'https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json'
+        params = {
+            'rxcui': rxcui,
+            'rela': 'may_treat',
+            'relaSource': 'MEDRT'
+        }
+
+        response = requests.get(url, params=params)
 
         if response.status_code != 200:
             continue
 
         data = response.json()
-        print(data)
         info_list = data.get("rxclassDrugInfoList", {}).get("rxclassDrugInfo", [])
         
         if not info_list:
             continue
 
-        indications = set()
         for entry in info_list:
             condition = entry["rxclassMinConceptItem"]["className"]
-            indications.add(condition)
+            if condition not in conditions:
+                conditions[condition] = add_condition(condition, cursor)
 
-        print(sorted(indications))
+            if (ing_id, conditions[condition]) not in treatments:
+                add_treatment(ing_id, conditions[condition], cursor)
+                treatments.add((ing_id, conditions[condition]))
 
-
-    cursor.close()
     pass
 
 def main():
@@ -161,9 +207,6 @@ def main():
         return
     if argv[1] == 'nsides':
         load_nsides(db)
-    elif argv[1] == 'get_uses':
-        get_uses(db)
-
 
     db.close()
 
