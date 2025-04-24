@@ -1,2 +1,5 @@
 **/__pycache__
 *.gz
+*.db
+drugcentral/
+nsides/
