@@ -1,6 +1,15 @@
 from typing import List
-from scraper.utils import rx_class
+from requests import request
 
+from scraper.utils import DOMAIN
+
+
+def __rx_class(path: str, **kwargs):
+    url = f'{DOMAIN}/REST/rxclass/{path}.json'
+    r = request('GET', url, params=kwargs if kwargs else None)
+    if r.status_code != 200:
+        return None
+    return r.json()
 
 def get_all_classes(classTypes: List[str] | None):
     """
@@ -9,10 +18,14 @@ def get_all_classes(classTypes: List[str] | None):
     ty = None
     if classTypes is not None:
         ty = ''.join(classTypes)
-    return rx_class("allClasses", classTypes=ty)
+    return __rx_class("allClasses", classTypes=ty)
 
-def get_class_types():
+def get_class_types() -> List[str] | None:
     """
     Get the class types. The resources findClassByName, getClassTree, getClassGraphBySource, and getAllClasses use the class types as filters for the output. 
     """
-    return rx_class("classTypes")
+    tys = __rx_class("classTypes")
+    if tys is None:
+        return None
+
+    return tys['classTypeList']['classTypeName']
