@@ -1,10 +1,9 @@
 from pprint import pprint as pp
-from typing import Final
-from requests import request
-from sys import argv
+
+import rx_class
 
 def main():
-    rx_class("allClasses", classTypes="CHEM DISEASE")
+    pp(rx_class.get_class_types())
     pass
 
 if __name__ == "__main__":
