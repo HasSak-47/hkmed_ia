@@ -1,3 +1,4 @@
+# see https://lhncbc.nlm.nih.gov/RxNav/APIs/api-RxClass.getSourcesOfDrugClassRelations.html
 from typing import List, Optional
 from requests import request
 from sys import argv
