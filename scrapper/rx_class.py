@@ -4,50 +4,6 @@ from sys import argv
 
 from .utils import DOMAIN
 
-def __rx_class(path: str, **kwargs):
-    """Internal helper function to make API requests"""
-
-    url = f'{DOMAIN}/REST/rxclass/{path}.json'
-    r = request('GET', url, params=kwargs if kwargs else None)
-    if r.status_code != 200:
-        return None
-    return r.json()
-
-def get_all_classes(classTypes: Optional[List[str]] = None):
-    """
-    Get all classes, or classes of certain types (the classTypes parameter).
-
-    Args:
-        class_types: List of class types to filter by
-        
-    Returns:
-        API response as dict or None if request fails
-    """
-    ty = None
-    if classTypes is not None:
-        ty = ''.join(classTypes)
-    return __rx_class("allClasses", classTypes=ty)
-
-
-def get_class_types() -> Optional[List[str]]:
-    """
-    [DEPRECATED - use CLASS_TYPES instead]
-    Internal function used only during project setup to generate the CLASS_TYPES constant.
-    This makes an actual API call to fetch class types.
-    
-    For normal usage, always use the pre-generated CLASS_TYPES constant instead,
-    which contains the same values without making network requests.
-
-    Get the class types. The resources findClassByName, getClassTree, getClassGraphBySource, and getAllClasses use the class types as filters for the output. 
-
-    Returns:
-        List of class type names or None if request fails
-    """
-    tys = __rx_class("classTypes")
-    if tys is None:
-        return None
-
-    return tys['classTypeList']['classTypeName']
 
 def __populate_class_types():
     types = get_class_types()
@@ -72,3 +28,150 @@ except ImportError as e:
             'Generate them with "python -m scrapper generate"',
             e
         )
+
+def __rx_class(path: str, **kwargs):
+    """Internal helper function to make API requests"""
+
+    url = f'{DOMAIN}/REST/rxclass/{path}.json'
+    r = request('GET', url, params=kwargs if kwargs else None)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+class Class:
+    id   : str
+    name : str
+    types: List[str]
+    url  : Optional[str]
+
+def find_class_by_name(className: str, classTypes: Optional[List[str]] = None) -> Optional[List[Class]]:
+    json = __rx_class('class/byName', className=className, classTypes=classTypes)
+    if json is None:
+        return None
+    
+    return json['rxclassMinConceptList']['rxclassMinConcept']
+
+def find_classes_by_id(classId: str):
+    """
+    not finished handle case of multiple classes found
+    """
+    json = __rx_class('class/byId', classId=classId)
+    if json is None:
+        return None
+    
+    return json
+
+def find_similar_classes_by_class(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def find_similar_classes_by_drug_list(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_all_classes(classTypes: Optional[List[str]] = None):
+    """
+    Get all classes, or classes of certain types (the classTypes parameter).
+
+    Args:
+        class_types: List of class types to filter by
+        
+    Returns:
+        API response as dict or None if request fails
+    """
+    ty = None
+    if classTypes is not None:
+        ty = ''.join(classTypes)
+    return __rx_class("allClasses", classTypes=ty)
+
+
+def get_class_by_rx_norm_drug_id(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_class_by_rx_norm_drug_name(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_class_contexts(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_class_graph_by_source(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_class_members(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_class_tree(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_class_types() -> Optional[List[str]]:
+    """
+    [DEPRECATED - use CLASS_TYPES instead]
+    Internal function used only during project setup to generate the CLASS_TYPES constant.
+    This makes an actual API call to fetch class types.
+    
+    For normal usage, always use the pre-generated CLASS_TYPES constant instead,
+    which contains the same values without making network requests.
+
+    Get the class types. The resources findClassByName, getClassTree, getClassGraphBySource, and getAllClasses use the class types as filters for the output. 
+
+    Returns:
+        List of class type names or None if request fails
+    """
+    tys = __rx_class("classTypes")
+    if tys is None:
+        return None
+
+    return tys['classTypeList']['classTypeName']
+
+def get_rela_source_version(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_relas(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_similarity_information(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_sources_of_drug_class_relations(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
+def get_spelling_suggestions(*_): 
+    """
+    notimplemented
+    """
+    raise RuntimeError('not implemented')
+
